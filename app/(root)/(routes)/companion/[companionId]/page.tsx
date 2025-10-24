@@ -13,9 +13,12 @@ const CompanionPage = async ({
 }: CompanionIdPageProps) => {
     //TODO: Check subscription
 
+    // // Await params first before accessing its properties (required by Next app-router)
+    // const { companionId } = await params;
+
     const companion = await prismadb.companion.findUnique({
         where: {
-            id: params.companionId
+            id: params.companionId,
         }
     });
 

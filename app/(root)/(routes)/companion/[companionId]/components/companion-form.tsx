@@ -1,5 +1,6 @@
 "use client";
 
+import axios from "axios";
 import { Wand2 } from "lucide-react";
 import * as z from "zod";
 import { Category, Companion } from "@prisma/client";
@@ -21,6 +22,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 
 const PREAMBLE = `
@@ -57,8 +61,8 @@ const formSchema = z.object({
     description: z.string().min(1, {
         message: "Description is required",
     }),
-    instrunctions: z.string().min(200, {
-        message: "Instrunctions is required at 200 characters minimum",
+    instructions: z.string().min(200, {
+        message: "Instructions is required at 200 characters minimum",
     }),
     seed: z.string().min(200, {
         message: "Seed is required at 200 characters minimum",
@@ -75,12 +79,14 @@ export const CompanionForm = ({
     categories,
     initialData
 }: CompanionFormProps) => {
+    const router = useRouter();
+
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: initialData || {
             name: "",
             description: "",
-            instrunctions: "",
+            instructions: "",
             seed: "",
             src: "",
             categoryId: undefined,
@@ -90,7 +96,21 @@ export const CompanionForm = ({
     const isLoading = form. formState.isSubmitting;
 
     const onSubmit = async (data: z.infer<typeof formSchema>) => {
-        console.log(data);
+        try {
+            if (initialData) {
+                //Update Companion Functionality
+                await axios.patch(`/api/companion/${initialData.id}`, data);
+            } else {
+                //Create Companion Functionality
+                await axios.post("/api/companion", data);
+            }
+            toast.success(`Companion ${initialData ? "updated" : "created"} successfully!`);
+
+            router.refresh();
+            router.push("/");
+        } catch (error) {
+            toast.error("Something went wrong. Please try again.");
+        }
     }
 
     return (
@@ -209,13 +229,13 @@ export const CompanionForm = ({
                            Configuration
                         </h3>
                         <p className="text-sm text-muted-foreground">
-                            Detailed instrunctions for AI behavior.
+                            Detailed instructions for AI behavior.
                         </p>
                         </div>
                         <Separator className="bg-primary/10"/>
                     </div>
                     <FormField
-                            name="instrunctions"
+                            name="instructions"
                             control={form.control}
                             render={({ field }) => (
                                 <FormItem className="col-span-2 md:col-span-1">
